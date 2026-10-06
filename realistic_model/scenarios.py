@@ -1,7 +1,7 @@
 import sys, pickle
 exec(open(sys.argv[1]).read())
 import matplotlib; matplotlib.use('Agg'); import matplotlib.pyplot as plt
-tag = f'rho{RHO_LATE}' + ('_cap' if UPTAKE_CAP else '') + ('_prevax' if PREVAX_FACTORS else '')
+tag = f'rho{RHO_LATE}' + ('_cap' if UPTAKE_CAP else '')
 saved = pickle.load(open(f'{SCR}/{FIT_FILE}', 'rb')); zf = saved['zf']
 rr = tractFactors(zf)
 def run(alloc, until=END):
@@ -36,7 +36,7 @@ fig.tight_layout(); fig.savefig(f'{SCR}/fit2_{tag}.png', dpi=100)
 # ---------- scenarios ----------
 scen = {}
 for name, alloc in [('No vaccine', None), ('Actual rollout', actualAllocation), ('Uniform', uniformAllocation), ('Income-based', incomeAllocation),
-                    ('Susceptible-first', susceptibleAllocation), ('Commuting-based', commuteAllocation), ('Hotspot', hotspotAllocation(rr))]:
+                    ('Susceptible-first', susceptibleAllocation), ('Hotspot', hotspotAllocation(rr))]:
   onsets, _ = run(alloc)
   _, y = run(alloc, MID)
   scen[name] = dict(onsets=onsets, vaxMid=y[1] + y[3] + y[5] + y[7])
@@ -58,17 +58,17 @@ for p in range(len(PERIODS) - 1):
 
 fig, ax = plt.subplots(figsize=(12, 5))
 for name, col, ls in [('No vaccine', 'gray', '--'), ('Actual rollout', 'k', '-'), ('Uniform', 'C0', '-'), ('Income-based', 'C1', '-'),
-                      ('Susceptible-first', 'C2', '-'), ('Commuting-based', 'C3', '-'), ('Hotspot', 'C4', '-')]:
+                      ('Susceptible-first', 'C2', '-'), ('Hotspot', 'C4', '-')]:
   ax.plot(dates[VSTART - 30:], scen[name]['onsets'][VSTART - 30:].sum(1), color=col, ls=ls, label=name)
 ax.set_ylabel('New infections per day (true, not reported)'); ax.legend(); ax.grid(True)
 ax.set_title('NYC infections during the vaccine rollout, by allocation strategy')
 fig.tight_layout(); fig.savefig(f'{SCR}/scenarios2_time_{tag}.png', dpi=100)
 
-fig, ax = plt.subplots(figsize=(11, 5)); x = np.arange(4); wdt = 0.12
+fig, ax = plt.subplots(figsize=(11, 5)); x = np.arange(4); wdt = 0.13
 for k, (name, col) in enumerate([('No vaccine', 'gray'), ('Actual rollout', 'k'), ('Uniform', 'C0'), ('Income-based', 'C1'),
-                                 ('Susceptible-first', 'C2'), ('Commuting-based', 'C3'), ('Hotspot', 'C4')]):
+                                 ('Susceptible-first', 'C2'), ('Hotspot', 'C4')]):
   inf = scen[name]['onsets'][VSTART:].sum(0)
-  ax.bar(x + (k - 3) * wdt, [100 * inf[q == j].sum() / pop[q == j].sum() for j in range(4)], wdt, color=col, label=name)
+  ax.bar(x + (k - 2.5) * wdt, [100 * inf[q == j].sum() / pop[q == j].sum() for j in range(4)], wdt, color=col, label=name)
 ax.set_xticks(x, QN); ax.set_xlabel('Income quartile (tracts)')
 ax.set_ylabel('% of population infected, Dec 2020-Nov 2021'); ax.legend(); ax.grid(axis='y')
 ax.set_title('Infections during the rollout by income quartile')

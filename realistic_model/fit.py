@@ -1,4 +1,4 @@
-# Fits ZIP transmission factors period by period (later periods cannot affect earlier ones).
+# Fits ZIP transmission factors period by period (later periods cannot affect earlier ones) up to LAST_FITTED_PERIOD.
 import sys, pickle
 exec(open(sys.argv[1]).read())
 ITER = int(sys.argv[2]) if len(sys.argv) > 2 else 5
@@ -27,7 +27,7 @@ zf = np.ones((P, nz)); allWindows, allOnsets = [], []
 for p in range(P):
   # damped updates: if the error grows, go back to the best factors and halve the step
   stepZ = 0.4; best = None
-  frozen = PREVAX_FACTORS and p > LAST_FITTED_PERIOD
+  frozen = p > LAST_FITTED_PERIOD
   if frozen: zf[p] = zf[LAST_FITTED_PERIOD]
   for it in range(1 if frozen else ITER + 1):
     rr = tractFactors(zf)

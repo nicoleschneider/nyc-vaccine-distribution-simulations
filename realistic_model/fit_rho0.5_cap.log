@@ -18,34 +18,10 @@ period 1 iter 6: ZIP err 0.018 step 0.200 max R 3.52
 period 1 iter 7: ZIP err 0.015 step 0.200 max R 3.52
 period 1 iter 8: ZIP err 0.013 step 0.200 max R 3.52
 period 1 done: ZIP err 0.013
-period 2 iter 0: ZIP err 0.685 step 0.400 max R 2.31
-period 2 iter 1: ZIP err 0.170 step 0.400 max R 2.50
-period 2 iter 2: ZIP err 0.050 step 0.400 max R 2.49
-period 2 iter 3: ZIP err 0.021 step 0.400 max R 2.51
-period 2 iter 4: ZIP err 0.010 step 0.400 max R 2.51
-period 2 iter 5: ZIP err 0.006 step 0.400 max R 2.51
-period 2 iter 6: ZIP err 0.004 step 0.400 max R 2.51
-period 2 iter 7: ZIP err 0.003 step 0.400 max R 2.51
-period 2 iter 8: ZIP err 0.003 step 0.400 max R 2.51
-period 2 done: ZIP err 0.003
-period 3 iter 0: ZIP err 1.232 step 0.400 max R 4.75
-period 3 iter 1: ZIP err 0.616 step 0.400 max R 5.98
-period 3 iter 2: ZIP err 0.430 step 0.400 max R 5.98
-period 3 iter 3: ZIP err 0.411 step 0.400 max R 5.98
-period 3 iter 4: ZIP err 0.377 step 0.400 max R 5.98
-period 3 iter 5: ZIP err 0.388 step 0.400 max R 5.98
-period 3 iter 6: ZIP err 0.120 step 0.200 max R 5.98
-period 3 iter 7: ZIP err 0.117 step 0.200 max R 5.98
-period 3 iter 8: ZIP err 0.116 step 0.200 max R 5.98
-period 3 done: ZIP err 0.116
-period 4 iter 0: ZIP err 0.751 step 0.400 max R 4.62
-period 4 iter 1: ZIP err 0.269 step 0.400 max R 5.76
-period 4 iter 2: ZIP err 0.092 step 0.400 max R 5.98
-period 4 iter 3: ZIP err 0.068 step 0.400 max R 5.98
-period 4 iter 4: ZIP err 0.065 step 0.400 max R 5.98
-period 4 iter 5: ZIP err 0.064 step 0.400 max R 5.98
-period 4 iter 6: ZIP err 0.063 step 0.400 max R 5.98
-period 4 iter 7: ZIP err 0.063 step 0.400 max R 5.98
-period 4 iter 8: ZIP err 0.062 step 0.400 max R 5.98
-period 4 done: ZIP err 0.062
-infected by Apr 20 2020 26.4% | ever infected by Nov 2021 53.4%
+period 2 iter 0: ZIP err 0.249 step 0.400 max R 2.44
+period 2 done: ZIP err 0.249
+period 3 iter 0: ZIP err 0.869 step 0.400 max R 5.52
+period 3 done: ZIP err 0.869
+period 4 iter 0: ZIP err 0.632 step 0.400 max R 5.78
+period 4 done: ZIP err 0.632
+infected by Apr 20 2020 26.4% | ever infected by Nov 2021 53.5%
