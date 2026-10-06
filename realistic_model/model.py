@@ -131,9 +131,8 @@ def rhs(y, b, r, e):
   return np.array([-iS, -iSv, iS - SIGMA * E, iSv - SIGMA * Ev, SIGMA * E - GAMMA * I, SIGMA * Ev - GAMMA * Iv,
                    GAMMA * I, GAMMA * Iv, SIGMA * (E + Ev)])
 
-# Optional uptake cap: no ZIP vaccinates more of its residents than actually got a first dose by Dec 2021,
+# Uptake cap: no ZIP vaccinates more of its residents than actually got a first dose by Dec 2021,
 # so a different allocation changes when people are vaccinated, not how many are willing.
-UPTAKE_CAP = os.environ.get('UPTAKE_CAP') == '1'
 finalCoverage = np.clip(cumZ[-1] / np.array([snap[(snap.day == snapDays[-1]) & (snap.MODZCTA == int(zc))].POP_DENOMINATOR.sum() or np.nan for zc in zips]), 0, 0.99)
 willing = np.nan_to_num(finalCoverage, nan=np.nanmean(finalCoverage))[zi] * pop
 
@@ -142,7 +141,7 @@ def vaccinate(y, doses, weights):
   remaining = doses
   while remaining > 1e-6:
     U = S + R
-    if UPTAKE_CAP: U = np.minimum(U, np.maximum(willing - (Sv + Ev + Iv + Rv), 0))
+    U = np.minimum(U, np.maximum(willing - (Sv + Ev + Iv + Rv), 0))
     demand = weights * U
     if demand.sum() <= 1e-6: demand = U.copy()
     if demand.sum() <= 1e-6: break

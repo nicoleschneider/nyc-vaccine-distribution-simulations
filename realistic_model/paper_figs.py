@@ -77,7 +77,7 @@ for key, title, cbar, fname in [('vaxMid', 'Percentage of People with a First Do
     fig.savefig(f'{OUT}/{fname}_{name}.png', dpi=150, bbox_inches='tight'); plt.close(fig)
 
 # strategy comparison: share of each income quartile infected during the rollout
-scen = pickle.load(open(f'{SCR}/scenarios2_rho{RHO_LATE}_cap.pkl', 'rb'))
+scen = pickle.load(open(f'{SCR}/scenarios2_rho{RHO_LATE}.pkl', 'rb'))
 q = pd.qcut(inc, 4, labels=False); QN = ['Poorest', 'Q2', 'Q3', 'Richest']
 names = [k for k in scen if k != 'No vaccine']
 fig, ax = plt.subplots(figsize=(10, 5)); x = np.arange(4); w = 0.8 / len(names)
