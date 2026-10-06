@@ -27,7 +27,9 @@ zf = np.ones((P, nz)); allWindows, allOnsets = [], []
 for p in range(P):
   # damped updates: if the error grows, go back to the best factors and halve the step
   stepZ = 0.4; best = None
-  for it in range(ITER + 1):
+  frozen = PREVAX_FACTORS and p > LAST_FITTED_PERIOD
+  if frozen: zf[p] = zf[LAST_FITTED_PERIOD]
+  for it in range(1 if frozen else ITER + 1):
     rr = tractFactors(zf)
     if p == 0:   # choose the initial seed size together with the first window
       seedBest = None
@@ -44,7 +46,7 @@ for p in range(P):
       best = dict(e=e, zf=zf[p].copy(), y=y, windows=windows, on=on, seed=seed if p == 0 else None)
     if best['e'] < e: stepZ /= 2   # error went up: step again from the best factors, with half the step
     else: best['mr'] = mr
-    if it < ITER:
+    if it < ITER and not frozen:
       zf[p] = np.clip(best['zf'] * np.where(has[p], obsRel[p] / np.maximum(best['mr'], 1e-6), 1.0) ** stepZ, 0.1, 10)
   zf[p] = best['zf']; yStart = best['y']; allWindows += best['windows']; allOnsets.append(best['on'])
   if p == 0: seed0 = best['seed']
@@ -52,4 +54,4 @@ for p in range(P):
 
 onsets = np.concatenate(allOnsets)
 print(f'infected by Apr 20 2020 {onsets[:SERO_DAY].sum()/pop.sum():.1%} | ever infected by Nov 2021 {onsets.sum()/pop.sum():.1%}')
-pickle.dump(dict(zf=zf, seed=seed0, windows=allWindows, onsets=onsets, rhoLate=RHO_LATE), open(f'{SCR}/fit3_rho{RHO_LATE}.pkl', 'wb'))
+pickle.dump(dict(zf=zf, seed=seed0, windows=allWindows, onsets=onsets, rhoLate=RHO_LATE), open(f'{SCR}/{FIT_FILE}', 'wb'))

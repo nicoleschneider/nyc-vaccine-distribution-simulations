@@ -4,7 +4,7 @@ exec(open(sys.argv[1]).read())
 import matplotlib; matplotlib.use('Agg'); import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 OUT = sys.argv[2]
-saved = pickle.load(open(f'{SCR}/fit3_rho{RHO_LATE}.pkl', 'rb')); rr = tractFactors(saved['zf'])
+saved = pickle.load(open(f'{SCR}/{FIT_FILE}', 'rb')); rr = tractFactors(saved['zf'])
 VSTART, MID = 286, 397   # rollout starts Dec 11 2020; vaccination map on Apr 1 2021
 dates = DAY0 + pd.to_timedelta(np.arange(END + 1), 'D')
 

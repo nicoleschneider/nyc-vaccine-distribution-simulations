@@ -13,6 +13,10 @@ SERO_DAY, SERO = 51, 0.227     # 22.7% of NYC infected by ~Apr 20 2020 (NYS anti
 RHO_LATE = float(os.environ.get('RHO_LATE', 0.5))  # share of infections reported from Jun 2020
 PERIODS = [0, 92, 276, 457, 549, END]   # Mar-May 2020, Jun-Nov 2020, Dec 2020-May 2021, Jun-Aug 2021, Sep-Nov 2021
 DT = 0.5; WINDOW = 14
+# PREVAX_FACTORS=1: ZIP factors are fitted only on pre-vaccine periods (Mar-Nov 2020) and the Jun-Nov 2020 factors are
+# kept for later periods, so they do not absorb the effects of the actual rollout. Only the citywide b(t) is fitted after.
+PREVAX_FACTORS = os.environ.get('PREVAX_FACTORS') == '1'; LAST_FITTED_PERIOD = 1
+FIT_FILE = f'fit3_rho{RHO_LATE}' + ('_prevax' if PREVAX_FACTORS else '') + '.pkl'
 
 # ---------- tracts ----------
 t = geopd.read_file('nycCensusTracts/nyct2020.dbf'); t['GEOID'] = t['GEOID'].astype(np.int64)
@@ -108,6 +112,18 @@ uniformWeights = np.ones(n)
 zInc = (inc - np.median(inc)) / inc.std(); incomeWeights = zInc.max() - zInc
 def uniformAllocation(day, y): return dosesPerDay[day], uniformWeights
 def incomeAllocation(day, y): return dosesPerDay[day], incomeWeights
+# The targeted strategies below weight a tract by how far its score is above the lowest tract, as income-based does.
+def susceptibleAllocation(day, y):   # share of unvaccinated residents never infected, recomputed daily
+  S, R = y[0], y[6]; s = np.divide(S, S + R, out=np.zeros(n), where=S + R > 0)
+  return dosesPerDay[day], s - s.min()
+otherContact = 1 - pop * (M.multiply(M) @ (1 / Npresent))   # share of a resident's contacts with other tracts' residents
+commuteWeights = otherContact - otherContact.min()
+def commuteAllocation(day, y): return dosesPerDay[day], commuteWeights
+def hotspotAllocation(rByPeriod):   # current force of infection on residents, recomputed daily
+  def allocation(day, y):
+    lam = rByPeriod[periodOf(day)] * (M @ ((MT @ (y[4] + y[5])) / Npresent))
+    return dosesPerDay[day], lam - lam.min()
+  return allocation
 
 # ---------- model ----------
 # state rows: S, Sv, E, Ev, I, Iv, R, Rv, cumulative onsets (E->I)
