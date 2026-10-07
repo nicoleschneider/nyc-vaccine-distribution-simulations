@@ -115,5 +115,7 @@ fig.tight_layout(); fig.savefig(f'{OUT}/strategies_by_quartile.png', dpi=150); p
 fig, ax = plt.subplots(figsize=(10, 5)); d = dates[1:]
 for name in names: ax.plot(d[VSTART - 30:], scen[name]['onsets'][VSTART - 30:].sum(1), label=name)
 ax.set_xlabel('Date', fontsize=LABEL); ax.set_ylabel('New Infections per Day', fontsize=LABEL)
+ax.xaxis.set_major_locator(matplotlib.dates.MonthLocator(bymonth=[1, 4, 7, 10]))
+ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b\n%Y'))
 ax.grid(True); ax.legend()
 fig.tight_layout(); fig.savefig(f'{OUT}/strategies_over_time.png', dpi=150); plt.close(fig)
