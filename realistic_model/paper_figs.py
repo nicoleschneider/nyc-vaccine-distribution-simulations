@@ -1,4 +1,4 @@
-# Paper figures: model fit to reported cases, Figures 3a-c (uniform) and 4a-c (income-based), and the strategy comparison.
+# Paper figures: model fit to reported cases, compartments and tract maps for each strategy, and the strategy comparison.
 # Plain matplotlib style to match the other figures in the paper. Run after fit.py and scenarios.py.
 import sys, pickle
 exec(open(sys.argv[1]).read())
@@ -22,14 +22,14 @@ geo = geo[['GEOID', 'geometry']].merge(df[['GEOID']], on='GEOID')   # same tract
 assert (geo.GEOID.to_numpy() == df.GEOID.to_numpy()).all()
 
 res = {}
-for name, alloc in [('uniform', uniformAllocation), ('income_based', incomeAllocation)]:
+for name, alloc in [('Actual rollout', actualAllocation), ('Uniform', uniformAllocation), ('Income-based', incomeAllocation),
+                    ('Susceptible-first', susceptibleAllocation), ('Hotspot', hotspotAllocation(rr))]:
   totals, yStart, yMid, yEnd = runDaily(alloc)
   res[name] = dict(totals=totals, vaxMid=(yMid[1] + yMid[3] + yMid[5] + yMid[7]) / pop,
                    infRollout=(yEnd[8] - yStart[8]) / pop)
-  print(name, f'infections during rollout {(yEnd[8] - yStart[8]).sum():.0f}, recovered at end {(yEnd[6] + yEnd[7]).sum():.0f}, '
+  print(f'{name:17s} infections during rollout {(yEnd[8] - yStart[8]).sum():.0f}, recovered at end {(yEnd[6] + yEnd[7]).sum():.0f}, '
         f'vaccinated at end {(yEnd[1] + yEnd[3] + yEnd[5] + yEnd[7]).sum():.0f}')
 
-TITLES = {'uniform': 'Uniform Allocation', 'income_based': 'Income-Based Allocation'}
 TITLE, LABEL = 14, 14
 
 # model fit: reported cases, citywide and by borough
@@ -52,29 +52,57 @@ axes[0].legend(); axes[2].set_ylabel('Reported Cases per Day per 100,000', fonts
 fig.suptitle('Reported COVID-19 Cases by Borough: Model vs Observed', fontsize=TITLE)
 fig.tight_layout(); fig.savefig(f'{OUT}/model_fit_borough.png', dpi=150); plt.close(fig)
 
-# (a) citywide compartments over time
+# per-strategy figures first, then the combined ones; all share one y-axis (compartments) and one color scale per map
+SLUG = {name: name.lower().replace(' ', '_').replace('-', '_') for name in res}
 SERIES = [('Susceptible', lambda T: T[:, 0]), ('Exposed', lambda T: T[:, 2] + T[:, 3]), ('Infected', lambda T: T[:, 4] + T[:, 5]),
           ('Recovered', lambda T: T[:, 6] + T[:, 7]), ('Vaccinated, never infected', lambda T: T[:, 1])]
+YMAX = 1.05 * max(f(res[k]['totals'][VSTART:] / 1e6).max() for k in res for _, f in SERIES)   # line plots cover the rollout only
+ROWS = [('vaxMid', 'First Dose by April 1, 2021', 'Percentage of Population Vaccinated',
+         'Percentage of People with a First Dose by Tract (April 1, 2021)', 'new_vaccinated_apr2021'),
+        ('infRollout', 'Infected Dec 2020 - Nov 2021', 'Percentage of Population Infected',
+         'Percentage of People Infected During the Rollout by Tract (Dec 2020 - Nov 2021)', 'new_infected_rollout')]
+LIMITS = {key: np.percentile(np.concatenate([100 * res[k][key] for k in res]), [2, 98]) for key, *_ in ROWS}
+
 for name in res:
   T = res[name]['totals'] / 1e6
   fig, ax = plt.subplots(figsize=(10, 6))
-  for label, f in SERIES: ax.plot(dates, f(T), label=label)
-  ax.axvline(dates[VSTART], color='gray', ls='--', label='Rollout starts')
-  ax.set_title(f'SEIRV Model Simulation - {TITLES[name]}', fontsize=TITLE)
+  for label, f in SERIES: ax.plot(dates[VSTART:], f(T)[VSTART:], label=label)
+  ax.set_title(f'SEIRV Model Simulation - {name}', fontsize=TITLE)
   ax.set_xlabel('Date', fontsize=LABEL); ax.set_ylabel('Number of People (millions)', fontsize=LABEL)
-  ax.set_xlim(dates[0] - pd.Timedelta(days=15), dates[-1] + pd.Timedelta(days=15)); ax.grid(True); ax.legend()
-  fig.tight_layout(); fig.savefig(f'{OUT}/new_seirv_{name}.png', dpi=150); plt.close(fig)
-
-# (b) % with a first dose by tract on Apr 1 2021, (c) % infected during the rollout; one color scale per figure pair
-for key, title, cbar, fname in [('vaxMid', 'Percentage of People with a First Dose by Tract (April 1, 2021)', 'Percentage of Population Vaccinated', 'new_vaccinated_apr2021'),
-                                ('infRollout', 'Percentage of People Infected During the Rollout by Tract (Dec 2020 - Nov 2021)', 'Percentage of Population Infected', 'new_infected_rollout')]:
-  vmin, vmax = np.percentile(np.concatenate([100 * res[k][key] for k in res]), [2, 98])
-  for name in res:
+  ax.set_xlim(dates[VSTART], dates[-1]); ax.set_ylim(0, YMAX); ax.grid(True); ax.legend()
+  fig.tight_layout(); fig.savefig(f'{OUT}/new_seirv_{SLUG[name]}.png', dpi=150); plt.close(fig)
+  for key, _, cbar, title, fname in ROWS:
     g = geo.copy(); g['v'] = 100 * res[name][key]
     fig, ax = plt.subplots(figsize=(8, 7))
-    g.plot(column='v', cmap='viridis', vmin=vmin, vmax=vmax, ax=ax, linewidth=0, legend=True, legend_kwds={'label': cbar})
-    ax.set_axis_off(); ax.set_title(f'{title}\n{TITLES[name]}', fontsize=12)
-    fig.savefig(f'{OUT}/{fname}_{name}.png', dpi=150, bbox_inches='tight'); plt.close(fig)
+    g.plot(column='v', cmap='viridis', vmin=LIMITS[key][0], vmax=LIMITS[key][1], ax=ax, linewidth=0, legend=True, legend_kwds={'label': cbar})
+    ax.set_axis_off(); ax.set_title(f'{title}\n{name}', fontsize=12)
+    fig.savefig(f'{OUT}/{fname}_{SLUG[name]}.png', dpi=150, bbox_inches='tight'); plt.close(fig)
+
+# citywide compartments over time, one panel per strategy
+fig, axes = plt.subplots(1, len(res), figsize=(22, 5), sharey=True)
+for ax, name in zip(axes, res):
+  T = res[name]['totals'] / 1e6
+  for label, f in SERIES: ax.plot(dates[VSTART:], f(T)[VSTART:], label=label)
+  ax.set_title(name, fontsize=LABEL); ax.set_xlim(dates[VSTART], dates[-1]); ax.set_ylim(0, YMAX); ax.grid(True)
+  ax.xaxis.set_major_locator(matplotlib.dates.MonthLocator(bymonth=[1, 4, 7, 10]))
+  ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b\n%Y'))
+axes[0].set_ylabel('Number of People (millions)', fontsize=LABEL)
+fig.supxlabel('Date', fontsize=LABEL); fig.suptitle('SEIRV Model Simulation by Allocation Strategy', fontsize=TITLE)
+fig.legend(*axes[0].get_legend_handles_labels(), loc='lower center', ncol=5, bbox_to_anchor=(0.5, -0.06))
+fig.tight_layout(); fig.savefig(f'{OUT}/seirv_strategies.png', dpi=150, bbox_inches='tight'); plt.close(fig)
+
+# tract maps: % with a first dose on Apr 1 2021 (top), % infected during the rollout (bottom); one color scale per row
+fig, axes = plt.subplots(2, len(res), figsize=(22, 9))
+for r, (key, rowTitle, cbar, *_) in enumerate(ROWS):
+  vmin, vmax = LIMITS[key]
+  for ax, name in zip(axes[r], res):
+    g = geo.copy(); g['v'] = 100 * res[name][key]
+    g.plot(column='v', cmap='viridis', vmin=vmin, vmax=vmax, ax=ax, linewidth=0)
+    ax.set_axis_off(); ax.set_title(name if r == 0 else '', fontsize=LABEL)
+  axes[r, 0].text(-0.05, 0.5, rowTitle, transform=axes[r, 0].transAxes, rotation=90, ha='right', va='center', fontsize=LABEL)
+  fig.colorbar(plt.cm.ScalarMappable(matplotlib.colors.Normalize(vmin, vmax), 'viridis'), ax=axes[r], fraction=0.015, pad=0.01, label=cbar)
+fig.suptitle('Vaccination and Infection by Census Tract and Allocation Strategy', fontsize=TITLE)
+fig.savefig(f'{OUT}/maps_strategies.png', dpi=150, bbox_inches='tight'); plt.close(fig)
 
 # strategy comparison: share of each income quartile infected during the rollout
 scen = pickle.load(open(f'{SCR}/scenarios2_rho{RHO_LATE}.pkl', 'rb'))
