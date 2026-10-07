@@ -30,14 +30,13 @@ for name, alloc in [('Actual rollout', actualAllocation), ('Uniform', uniformAll
   print(f'{name:17s} infections during rollout {(yEnd[8] - yStart[8]).sum():.0f}, recovered at end {(yEnd[6] + yEnd[7]).sum():.0f}, '
         f'vaccinated at end {(yEnd[1] + yEnd[3] + yEnd[5] + yEnd[7]).sum():.0f}')
 
-TITLE, LABEL = 14, 14
+LABEL = 14
 
 # model fit: reported cases, citywide and by borough
 rep = saved['onsets'] * np.array([rho(dd, rhoEarly) for dd in range(END)])[:, None]
 fig, ax = plt.subplots(figsize=(10, 5))
 ax.plot(dates[:END], citySmooth, label='Observed (7-day average)')
 ax.plot(dates[:END], rep.sum(1), label='Model')
-ax.set_title('Reported COVID-19 Cases in NYC: Model vs Observed', fontsize=TITLE)
 ax.set_xlabel('Date', fontsize=LABEL); ax.set_ylabel('Reported Cases per Day', fontsize=LABEL)
 ax.grid(True); ax.legend()
 fig.tight_layout(); fig.savefig(f'{OUT}/model_fit.png', dpi=150); plt.close(fig)
@@ -49,7 +48,6 @@ for ax, b in zip(axes, BOROS):
   ax.plot(dates[:END], rep[:, boro == b].sum(1) / n, label='Model')
   ax.set_title(b, fontsize=12); ax.grid(True)
 axes[0].legend(); axes[2].set_ylabel('Reported Cases per Day per 100,000', fontsize=LABEL); axes[-1].set_xlabel('Date', fontsize=LABEL)
-fig.suptitle('Reported COVID-19 Cases by Borough: Model vs Observed', fontsize=TITLE)
 fig.tight_layout(); fig.savefig(f'{OUT}/model_fit_borough.png', dpi=150); plt.close(fig)
 
 # per-strategy figures first, then the combined ones; all share one y-axis (compartments) and one color scale per map
@@ -57,25 +55,22 @@ SLUG = {name: name.lower().replace(' ', '_').replace('-', '_') for name in res}
 SERIES = [('Susceptible', lambda T: T[:, 0]), ('Exposed', lambda T: T[:, 2] + T[:, 3]), ('Infected', lambda T: T[:, 4] + T[:, 5]),
           ('Recovered', lambda T: T[:, 6] + T[:, 7]), ('Vaccinated, never infected', lambda T: T[:, 1])]
 YMAX = 1.05 * max(f(res[k]['totals'][VSTART:] / 1e6).max() for k in res for _, f in SERIES)   # line plots cover the rollout only
-ROWS = [('vaxMid', 'First Dose by April 1, 2021', 'Percentage of Population Vaccinated',
-         'Percentage of People with a First Dose by Tract (April 1, 2021)', 'new_vaccinated_apr2021'),
-        ('infRollout', 'Infected Dec 2020 - Nov 2021', 'Percentage of Population Infected',
-         'Percentage of People Infected During the Rollout by Tract (Dec 2020 - Nov 2021)', 'new_infected_rollout')]
+ROWS = [('vaxMid', 'First Dose by April 1, 2021', 'Percentage of Population Vaccinated', 'new_vaccinated_apr2021'),
+        ('infRollout', 'Infected Dec 2020 - Nov 2021', 'Percentage of Population Infected', 'new_infected_rollout')]
 LIMITS = {key: np.percentile(np.concatenate([100 * res[k][key] for k in res]), [2, 98]) for key, *_ in ROWS}
 
 for name in res:
   T = res[name]['totals'] / 1e6
   fig, ax = plt.subplots(figsize=(10, 6))
   for label, f in SERIES: ax.plot(dates[VSTART:], f(T)[VSTART:], label=label)
-  ax.set_title(f'SEIRV Model Simulation - {name}', fontsize=TITLE)
   ax.set_xlabel('Date', fontsize=LABEL); ax.set_ylabel('Number of People (millions)', fontsize=LABEL)
   ax.set_xlim(dates[VSTART], dates[-1]); ax.set_ylim(0, YMAX); ax.grid(True); ax.legend()
   fig.tight_layout(); fig.savefig(f'{OUT}/new_seirv_{SLUG[name]}.png', dpi=150); plt.close(fig)
-  for key, _, cbar, title, fname in ROWS:
+  for key, _, cbar, fname in ROWS:
     g = geo.copy(); g['v'] = 100 * res[name][key]
     fig, ax = plt.subplots(figsize=(8, 7))
     g.plot(column='v', cmap='viridis', vmin=LIMITS[key][0], vmax=LIMITS[key][1], ax=ax, linewidth=0, legend=True, legend_kwds={'label': cbar})
-    ax.set_axis_off(); ax.set_title(f'{title}\n{name}', fontsize=12)
+    ax.set_axis_off()
     fig.savefig(f'{OUT}/{fname}_{SLUG[name]}.png', dpi=150, bbox_inches='tight'); plt.close(fig)
 
 # citywide compartments over time, one panel per strategy
@@ -87,7 +82,7 @@ for ax, name in zip(axes, res):
   ax.xaxis.set_major_locator(matplotlib.dates.MonthLocator(bymonth=[1, 4, 7, 10]))
   ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b\n%Y'))
 axes[0].set_ylabel('Number of People (millions)', fontsize=LABEL)
-fig.supxlabel('Date', fontsize=LABEL); fig.suptitle('SEIRV Model Simulation by Allocation Strategy', fontsize=TITLE)
+fig.supxlabel('Date', fontsize=LABEL)
 fig.legend(*axes[0].get_legend_handles_labels(), loc='lower center', ncol=5, bbox_to_anchor=(0.5, -0.06))
 fig.tight_layout(); fig.savefig(f'{OUT}/seirv_strategies.png', dpi=150, bbox_inches='tight'); plt.close(fig)
 
@@ -101,7 +96,6 @@ for r, (key, rowTitle, cbar, *_) in enumerate(ROWS):
     ax.set_axis_off(); ax.set_title(name if r == 0 else '', fontsize=LABEL)
   axes[r, 0].text(-0.05, 0.5, rowTitle, transform=axes[r, 0].transAxes, rotation=90, ha='right', va='center', fontsize=LABEL)
   fig.colorbar(plt.cm.ScalarMappable(matplotlib.colors.Normalize(vmin, vmax), 'viridis'), ax=axes[r], fraction=0.015, pad=0.01, label=cbar)
-fig.suptitle('Vaccination and Infection by Census Tract and Allocation Strategy', fontsize=TITLE)
 fig.savefig(f'{OUT}/maps_strategies.png', dpi=150, bbox_inches='tight'); plt.close(fig)
 
 # strategy comparison: share of each income quartile infected during the rollout
@@ -113,7 +107,6 @@ infQ = np.array([[100 * scen[name]['onsets'][VSTART:].sum(0)[q == j].sum() / pop
 for j in range(4):
   ax.bar(x + (j - 1.5) * w, infQ[:, j], w, label=QN[j], color=plt.cm.Blues(0.35 + 0.2 * j))
 ax.set_xticks(x, names)
-ax.set_title('Percentage of People Infected During the Rollout by Income Quartile', fontsize=TITLE)
 ax.set_xlabel('Allocation Strategy', fontsize=LABEL); ax.set_ylabel('Percentage Infected', fontsize=LABEL)
 ax.set_ylim(0, 25); ax.grid(True, axis='y'); ax.set_axisbelow(True)
 ax.legend(title='Census Tract Income Quartile', ncol=4, loc='upper center')
@@ -121,7 +114,6 @@ fig.tight_layout(); fig.savefig(f'{OUT}/strategies_by_quartile.png', dpi=150); p
 
 fig, ax = plt.subplots(figsize=(10, 5)); d = dates[1:]
 for name in names: ax.plot(d[VSTART - 30:], scen[name]['onsets'][VSTART - 30:].sum(1), label=name)
-ax.set_title('New Infections per Day During the Rollout by Strategy', fontsize=TITLE)
 ax.set_xlabel('Date', fontsize=LABEL); ax.set_ylabel('New Infections per Day', fontsize=LABEL)
 ax.grid(True); ax.legend()
 fig.tight_layout(); fig.savefig(f'{OUT}/strategies_over_time.png', dpi=150); plt.close(fig)
