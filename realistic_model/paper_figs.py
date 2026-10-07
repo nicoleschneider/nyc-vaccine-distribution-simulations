@@ -80,14 +80,15 @@ for key, title, cbar, fname in [('vaxMid', 'Percentage of People with a First Do
 scen = pickle.load(open(f'{SCR}/scenarios2_rho{RHO_LATE}.pkl', 'rb'))
 q = pd.qcut(inc, 4, labels=False); QN = ['Poorest', 'Q2', 'Q3', 'Richest']
 names = [k for k in scen if k != 'No vaccine']
-fig, ax = plt.subplots(figsize=(10, 5)); x = np.arange(4); w = 0.8 / len(names)
-for k, name in enumerate(names):
-  inf = scen[name]['onsets'][VSTART:].sum(0)
-  ax.bar(x + (k - (len(names) - 1) / 2) * w, [100 * inf[q == j].sum() / pop[q == j].sum() for j in range(4)], w, label=name)
-ax.set_xticks(x, QN)
+fig, ax = plt.subplots(figsize=(10, 5)); x = np.arange(len(names)); w = 0.8 / 4
+infQ = np.array([[100 * scen[name]['onsets'][VSTART:].sum(0)[q == j].sum() / pop[q == j].sum() for j in range(4)] for name in names])
+for j in range(4):
+  ax.bar(x + (j - 1.5) * w, infQ[:, j], w, label=QN[j], color=plt.cm.Blues(0.35 + 0.2 * j))
+ax.set_xticks(x, names)
 ax.set_title('Percentage of People Infected During the Rollout by Income Quartile', fontsize=TITLE)
-ax.set_xlabel('Census Tract Income Quartile', fontsize=LABEL); ax.set_ylabel('Percentage Infected', fontsize=LABEL)
-ax.set_ylim(0, 27); ax.grid(True, axis='y'); ax.set_axisbelow(True); ax.legend(ncol=3, loc='upper center')
+ax.set_xlabel('Allocation Strategy', fontsize=LABEL); ax.set_ylabel('Percentage Infected', fontsize=LABEL)
+ax.set_ylim(0, 25); ax.grid(True, axis='y'); ax.set_axisbelow(True)
+ax.legend(title='Census Tract Income Quartile', ncol=4, loc='upper center')
 fig.tight_layout(); fig.savefig(f'{OUT}/strategies_by_quartile.png', dpi=150); plt.close(fig)
 
 fig, ax = plt.subplots(figsize=(10, 5)); d = dates[1:]

@@ -1,2 +1,4 @@
+/workspaces/nyc-vaccine-distribution-simulations/realistic_model/paper_figs.py:65: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  ax.set_xlim(dates[0] - pd.Timedelta(days=15), dates[-1] + pd.Timedelta(days=15)); ax.grid(True); ax.legend()
 uniform infections during rollout 1191492, recovered at end 3874882, vaccinated at end 5612843
 income_based infections during rollout 1205462, recovered at end 3888237, vaccinated at end 5612843
